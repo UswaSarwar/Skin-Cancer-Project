@@ -1,0 +1,112 @@
+from flask import Flask, render_template, request
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.metrics import AUC
+import numpy as np
+from tensorflow import keras
+from keras.layers import Dense
+from keras.models import Sequential, load_model
+from tensorflow.keras.optimizers import Nadam
+import tensorflow as tf
+
+app = Flask(__name__)
+
+dependencies = {
+    'auc_roc': AUC
+}
+
+verbose_name = {
+0: 'Actinic keratoses and intraepithelial carcinomae',
+1: 'Basal cell carcinoma',
+2: 'Benign keratosis-like lesions',
+3: 'Dermatofibroma',
+4: 'Melanocytic nevi',
+5: 'Pyogenic granulomas and hemorrhage',
+6: 'Melanoma',
+
+           }
+
+
+
+
+
+
+class CustomNadam(Nadam):
+    def __init__(self, **kwargs):
+        kwargs.pop('weight_decay', None)
+        kwargs.pop('use_ema', None)
+        kwargs.pop('ema_momentum', None)
+        kwargs.pop('ema_overwrite_frequency', None)
+        kwargs.pop('jit_compile', None)
+        kwargs.pop('is_legacy_optimizer', None)
+        super().__init__(**kwargs)
+
+app = Flask(__name__)
+
+model = load_model('skin.h5', custom_objects={
+    'Nadam': CustomNadam,
+    'Custom>Nadam': CustomNadam
+})
+
+def predict_label(img_path):
+	test_image = image.load_img(img_path, target_size=(28,28))
+	test_image = image.img_to_array(test_image)/255.0
+	test_image = test_image.reshape(1, 28,28,3)
+
+	predict_x=model.predict(test_image) 
+	classes_x=np.argmax(predict_x,axis=1)
+	
+	return verbose_name[classes_x[0]]
+
+ 
+@app.route("/")
+@app.route("/first")
+def first():
+	return render_template('first.html')
+    
+@app.route("/login")
+def login():
+	return render_template('login.html')   
+    
+@app.route("/index", methods=['GET', 'POST'])
+def index():
+	return render_template("index.html")
+
+
+@app.route("/submit", methods = ['GET', 'POST'])
+def get_output():
+	if request.method == 'POST':
+		img = request.files['my_image']
+
+		img_path = "static/tests/" + img.filename	
+
+		img.save(img_path)
+
+		if len(img.filename)>=25:
+			predict_result = "invalid"
+		else:
+			predict_result = predict_label(img_path)
+
+	return render_template("prediction.html", prediction = predict_result, img_path = img_path)
+
+ 
+    
+@app.route("/Graph")
+def Graph():
+	return render_template('Graph.html') 
+
+@app.route("/chart")
+def chart():
+	return render_template('chart.html') 
+
+	
+if __name__ =='__main__':
+	app.run(debug = True)
+
+
+	
+
+	
+
+

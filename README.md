@@ -1,4 +1,4 @@
-# 🧠 Skin Cancer Detection using Deep Learning (CNN)
+# 🧠 Skin Cancer Classification using Deep Learning (CNN)
 
 ## 📌 Overview
 
